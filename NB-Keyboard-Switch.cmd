@@ -1,47 +1,47 @@
 @echo off
-chcp 65001 > nul
 
-rem 檢查是否以系統管理員身份運行
+rem Check if running as administrator
 net session > nul 2>&1
 if %errorlevel% neq 0 (
-    echo 請以系統管理員身份運行此指令。
+    echo Please run this command as an administrator.
     pause
     exit /b
 )
 
-rem 檢查當前鍵盤驅動狀態
-sc query i8042prt | find "RUNNING" > nul
-if %errorlevel% == 0 (
-    set "currentState=啟用"
-    set "newState=停用"
+:inputLoop
+set /p choice="Enter the keyboard state to switch to ([E]nable/[D]isable): "
+if /i "%choice%"=="D" (
+    set "newState=Disabled"
     set "configCommand=start= disabled"
-) else (
-    set "currentState=停用"
-    set "newState=啟用"
+) else if /i "%choice%"=="E" (
+    set "newState=Enabled"
     set "configCommand=start= auto"
+) else (
+    echo Error: Please enter Disable [D] or Enable [E].
+    goto inputLoop
 )
 
-echo 當前鍵盤狀態: %currentState%
-
-set /p choice="是否要切換內建鍵盤狀態至 [%newState%]? (Y/N): "
+set /p choice="Do you want to switch the built-in keyboard state to [%newState%]? (Y/N): "
 if /i "%choice%"=="Y" (
-    rem 切換鍵盤狀態
+    rem Switch keyboard state
     sc config i8042prt %configCommand% > nul
     if %errorlevel% neq 0 (
-        echo 設定失敗，請確認是否以系統管理員身份運行。
+        echo Setting failed. Please check if you are running as administrator.
         pause
         exit /b
     )
 
-    echo 已切換至 [%newState%] 鍵盤狀態，重啟電腦後生效。
-
-    set /p restartChoice="是否立即重啟電腦？(Y/N): "
-    if /i "%restartChoice%"=="Y" (
-        echo 正在重啟電腦...
-        shutdown /r /t 0
-    ) else (
-        echo 您選擇不重啟電腦。
-    )
+    echo Keyboard state switched to [%newState%]. It will take effect after a restart.
 ) else (
-    echo 您選擇不切換鍵盤狀態。
+    echo You chose not to switch the keyboard state.
+	pause
+	exit /b
+)
+    
+set /p choice="Would you like to restart the computer now? (Y/N): "
+if /i "%choice%"=="Y" (
+	echo Restart!
+	shutdown /r /t 0
+) else (
+	echo Restart canceled.
 )
